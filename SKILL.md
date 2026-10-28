@@ -50,7 +50,7 @@ openpyxl   仅当输入文件实为 .xlsx 时需要
 ### 4.1 命令行（首选，最稳）
 
 ```bash
-cd bank-nim-analyzer                            # 仓库根目录（本地为 program）
+cd <作品1目录>                                  # 提交包内为「…分析工具+1」；克隆后为 bank-nim-analyzer
 python main.py                                  # 读同目录 data.csv，图输出到同目录
 python main.py --data data.csv --outdir outputs # 指定输入与输出目录
 python main.py --data other.xlsx --outdir out_charts
@@ -182,7 +182,7 @@ plot_npl(npl, "chart_npl.png")
 AI 应执行：
 
 ```bash
-cd bank-nim-analyzer
+cd <作品1目录>
 python main.py
 ```
 
