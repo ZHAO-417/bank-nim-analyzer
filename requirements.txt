@@ -1,0 +1,6 @@
+# 运行时依赖（Python >= 3.8）
+# 安装：pip install -r requirements.txt
+# v0.2 起锁定主版本，避免 matplotlib 4 / pandas 3 的潜在不兼容
+pandas>=1.2,<3.0
+matplotlib>=3.3,<4.0
+openpyxl>=3.0,<4.0

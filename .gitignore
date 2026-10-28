@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.swp
+
+# 运行产物（本地输出，不入库）
+outputs/
+out_charts/
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 注意：chart_nim.png / chart_npl.png 被 README 直接引用，属于成果图，
+# 必须提交，因此这里不忽略 *.png；如需忽略临时截图请单独写具体文件名。
