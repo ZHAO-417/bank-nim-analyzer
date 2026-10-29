@@ -3,7 +3,7 @@
 """
 main.py —— 商业银行净息差（NIM）与不良贷款率（NPL）可视化工具
 
-版本：v0.2.2
+版本：v0.3.0
 
 功能
 ----
@@ -35,13 +35,16 @@ import numpy as np
 import pandas as pd
 from matplotlib import font_manager
 
-__version__ = "0.2.2"
+import metrics as mx
+
+__version__ = "0.3.0"
 
 # --------------------------------------------------------------------------- #
 # 0. 全局配置
 # --------------------------------------------------------------------------- #
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_DATA = BASE_DIR / "data.csv"
+DEFAULT_RAW = BASE_DIR / "data_raw.csv"
 
 CHART_NIM_NAME = "chart_nim.png"
 CHART_NPL_NAME = "chart_npl.png"
@@ -402,12 +405,46 @@ def summarize(df):
 # --------------------------------------------------------------------------- #
 # 5. 入口
 # --------------------------------------------------------------------------- #
+def build_from_raw(path):
+    """由原始科目计算 NIM 与 NPL，并与年报披露值对账（v0.3 指标下沉）。"""
+    rows = mx.load_raw(path)
+    records, checked = [], 0
+    max_nim = max_npl = max_cov = 0.0
+    for row in rows:
+        records.append({
+            "银行": row["银行"],
+            "年份": row["年份"],
+            "净息差%": mx.nim(row),
+            "不良率%": mx.npl(row),
+        })
+        res = mx.reconcile(row)
+        if res is None:
+            continue
+        checked += 1
+        max_nim = max(max_nim, abs(res["nim"]))
+        max_npl = max(max_npl, abs(res["npl"]))
+        if res["coverage"] is not None:
+            max_cov = max(max_cov, abs(res["coverage"]))
+
+    df = pd.DataFrame(records)
+    print(f"[指标] 由 {Path(path).name} 的原始科目计算：{len(rows)} 行（拨备覆盖率含 FVOCI）")
+    if checked:
+        print(f"[对账] 可核对 {checked} 行；最大偏差 NIM {max_nim:.2f} bp、"
+              f"NPL {max_npl:.2f} bp、覆盖率 {max_cov:.2f} pp")
+    return df
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="读取银行净息差/不良率数据，生成 chart_nim.png 与 chart_npl.png"
+        description="由原始科目计算净息差/不良率并绘图，或直接读披露值 data.csv"
     )
+    parser.add_argument("--source", choices=("disclosed", "raw"), default="disclosed",
+                        help="disclosed=读 data.csv 披露值（默认，覆盖 2020—2024）；"
+                             "raw=由原始科目计算（覆盖 2021—2024）")
+    parser.add_argument("--raw-data", type=Path, default=DEFAULT_RAW,
+                        help=f"原始科目表路径（默认：{DEFAULT_RAW.name}）")
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA,
-                        help=f"数据文件路径（默认：{DEFAULT_DATA.name}）")
+                        help=f"披露值表路径（--source disclosed 时使用，默认：{DEFAULT_DATA.name}）")
     parser.add_argument("--outdir", type=Path, default=BASE_DIR,
                         help="图片输出目录（默认：脚本所在目录）")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -421,7 +458,11 @@ def main():
     font = setup_chinese_font()
     print(f"[字体] 使用中文字体：{font}" if font else "[字体] 未找到中文字体")
 
-    df = clean_data(load_data(args.data))
+    if args.source == "raw":
+        df = build_from_raw(args.raw_data)
+    else:
+        df = clean_data(load_data(args.data))
+
     print(f"[数据] 共 {len(df)} 行，{df['银行'].nunique()} 家银行，"
           f"年份 {df['年份'].min()}—{df['年份'].max()}")
 

@@ -51,9 +51,12 @@ openpyxl   仅当输入文件实为 .xlsx 时需要
 
 ```bash
 cd <作品1目录>                                  # 提交包内为「…分析工具+1」；克隆后为 bank-nim-analyzer
-python main.py                                  # 读同目录 data.csv，图输出到同目录
+python main.py                                  # 读 data.csv 披露值（2020—2024），图输出到同目录
+python main.py --source raw                     # 由 data_raw.csv 原始科目计算（2021—2024）
 python main.py --data data.csv --outdir outputs # 指定输入与输出目录
 python main.py --data other.xlsx --outdir out_charts
+python metrics.py                               # 指标对账表（原始科目 → NIM/NPL/拨备覆盖率）
+python metrics.py --check                       # 对账失败时退出码 1，可挂 CI
 python main.py --version                        # 打印版本号
 ```
 
@@ -118,6 +121,19 @@ plot_npl(npl, "chart_npl.png")
 4. 关键列为空或无法转成数字的行会被静默丢弃（会体现在 `[数据] 共 N 行` 上，调用后应核对 N）；
 5. 至少要有 1 家银行、1 个年份，否则以退出码 1 结束；
 6. 银行在图中出现的顺序 = 它在表中首次出现的顺序（不是拼音序）。
+
+### 5.3 原始科目表（`data_raw.csv`，v0.3 起）
+
+当需要"由原始科目算指标"时使用，`main.py --source raw` 与 `metrics.py` 都读它：
+
+| 列 | 说明 |
+| --- | --- |
+| 银行、年份 | 同 5.2 |
+| 利息收入、利息支出、平均生息资产 | 计算 NIM |
+| 不良贷款余额、贷款和垫款总额 | 计算 NPL |
+| 贷款损失准备、贷款损失准备_FVOCI | 计算拨备覆盖率（合计与 FVOCI 分列） |
+
+约束：合计必须等于"摊余 + FVOCI"；拨备覆盖率默认含 FVOCI，漏计会让招行 2022 年从 450.79% 掉到 439.47%（−11.31 pp）。
 
 ## 6. 输出（outputs）
 
@@ -210,5 +226,6 @@ python main.py
 | 0.2.0 | 2026-10-28 | 标准 CSV + BytesIO 读取；行业均值虚线；息差溢价说明框；标签偏移修正；`--version` |
 | 0.2.1 | 2026-10-29 | 仅文档修订：信用成本方向、版本号冲突、目录示例 |
 | 0.2.2 | 2026-10-29 | 行业均值补齐 2020—2024 五年；图注与使用边界同步 |
+| 0.3.0 | 2026-10-29 | 指标下沉：`metrics.py` + `data_raw.csv`，由原始科目算 NIM/NPL/拨备覆盖率；`main.py --source raw`；8 行对账通过 |
 
-对应程序：`main.py` v0.2.0（本目录）。
+对应程序：`main.py` v0.3.0（本目录）。
